@@ -1,5 +1,5 @@
 import torch.nn as nn
-import math
+import math, torch
 import torch.utils.model_zoo as model_zoo
 BatchNorm2d = nn.BatchNorm2d
 
@@ -252,7 +252,7 @@ def resnet18(pretrained=True, **kwargs):
     model = ResNet(BasicBlock, [2, 2, 2, 2], **kwargs)
     if pretrained:
         model.load_state_dict(model_zoo.load_url(
-            model_urls['resnet18']), strict=False)
+            model_urls['resnet18']), strict=False, map_location=torch.device('cpu'))
     return model
 
 def deformable_resnet18(pretrained=True, **kwargs):
@@ -267,7 +267,7 @@ def deformable_resnet18(pretrained=True, **kwargs):
                     stage_with_dcn=[False, True, True, True], **kwargs)
     if pretrained:
         model.load_state_dict(model_zoo.load_url(
-            model_urls['resnet18']), strict=False)
+            model_urls['resnet18'], map_location=torch.device('cuda')), strict=False, )
     return model
 
 
@@ -308,7 +308,7 @@ def deformable_resnet50(pretrained=True, **kwargs):
                    **kwargs)
     if pretrained:
         model.load_state_dict(model_zoo.load_url(
-            model_urls['resnet50']), strict=False)
+            model_urls['resnet50'], map_location=torch.device('cuda')), strict=False)
     return model
 
 
