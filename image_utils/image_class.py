@@ -73,6 +73,7 @@ class ImageClass(object):
         cv2.imshow("self.__image", self.__image)
         cv2.resizeWindow("self.__image", 640 * 2, 480 * 2)
         cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
     def write_image(self, img_path: str):
         """Write an image to disk given a path.
