@@ -64,14 +64,14 @@ class ImageClass(object):
         (np.ndarray, str)
             Returns a tuple of cropped image and its format.
         """
-        cropped_image = self.__image[top_left_coord[0]:, top_left_coord[1]:]
+        cropped_image = self.__image[top_left_coord[0] :, top_left_coord[1] :]
         return cropped_image, self.__image_format
 
-    def show_image(self):
+    def show_image(self, window_name="self.__image"):
         """Display a loaded image"""
-        cv2.namedWindow("self.__image", cv2.WINDOW_NORMAL)
-        cv2.imshow("self.__image", self.__image)
-        cv2.resizeWindow("self.__image", 640 * 2, 480 * 2)
+        cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+        cv2.imshow(window_name, self.__image)
+        cv2.resizeWindow(window_name, 640 * 2, 480 * 2)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
