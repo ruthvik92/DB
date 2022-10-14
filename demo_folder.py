@@ -3,12 +3,15 @@ import argparse
 import os
 import time
 import glob
+import sys
 import cProfile
 import torch
 import cv2
 import numpy as np
 from experiment import Structure, Experiment
+from image_utils import image_class as ic
 from concern.config import Configurable, Config
+from image_utils import assisted_annotation as aa
 import math
 
 
@@ -54,6 +57,7 @@ def main():
     )
 
     args = parser.parse_args()
+    print(args.eager_show)
     args = vars(args)
     args = {k: v for k, v in args.items() if v is not None}
 
@@ -112,7 +116,9 @@ class Demo:
         return resized_img
 
     def load_image(self, image_path):
-        img = cv2.imread(image_path, cv2.IMREAD_COLOR).astype("float32")
+        img = cv2.imread(image_path, cv2.IMREAD_COLOR)  # .astype("float32")
+        img_np = img.copy()
+        img = img.astype("float32")
         original_shape = img.shape[:2]
         # t1 = time.time()
         img = self.resize_image(img)
@@ -120,7 +126,7 @@ class Demo:
         img -= self.RGB_MEAN
         img /= 255.0
         img = torch.from_numpy(img).permute(2, 0, 1).float().unsqueeze(0)
-        return img, original_shape
+        return img, img_np, original_shape
 
     def format_output(self, batch, output):
         batch_boxes, batch_scores = output
@@ -156,24 +162,39 @@ class Demo:
         model.eval()
         batch = dict()
         batch["filename"] = [image_path]
-        img, original_shape = self.load_image(image_path)
+        # t1 = time.time()
+        img, img_np, original_shape = self.load_image(image_path)
+        img_obj = ic.ImageClass()
+        img_obj.set_image(image=img_np, image_format="BGR")
+        # print("Time to load this image:{}".format(time.time() - t1))
         batch["shape"] = [original_shape]
         with torch.no_grad():
             batch["image"] = img
-            t1 = time.time()
+            # t1 = time.time()
             pred = model.forward(batch, training=False)
-            print("Time for pure inference only:{}".format(time.time() - t1))
+            # print("Time for pure inference only:{}".format(time.time() - t1))
 
             t1 = time.time()
             output = self.structure.representer.represent(
                 batch, pred, is_output_polygon=self.args["polygon"]
             )
+            boxes, _ = output
+            boxes = boxes[0]
+            polygons = [
+                np.array(item).astype(np.int32).reshape(-1, 2) for item in boxes
+            ]
+            ai_aa = aa.AiAssistedAnnotations(
+                original_image=img_obj, ai_annotated_polygons=polygons
+            )
+            ai_aa.show_ai_predictions()
+            sys.exit()
+
             print("Time for pure postprocessing only:{}".format(time.time() - t1))
             if not os.path.isdir(self.args["result_dir"]):
                 os.mkdir(self.args["result_dir"])
             self.format_output(batch, output)
 
-            t1 = time.time()
+            # t1 = time.time()
             if visualize and self.structure.visualizer:
                 vis_image = self.structure.visualizer.demo_visualize(image_path, output)
                 cv2.imwrite(
@@ -183,17 +204,21 @@ class Demo:
                     ),
                     vis_image,
                 )
-            print("Time for pure visualizing only:{}".format(time.time() - t1))
+            # print("Time for pure visualizing only:{}".format(time.time() - t1))
             print("\n")
 
     def infer_directory(self, dir_path, visualize=False):
         self.init_torch_tensor()
         model = self.init_model()
+        # model.eval()
         self.resume(model, self.model_path)
         list_of_image_paths = glob.glob(dir_path + "/*.png")
         n_images = len(list_of_image_paths)
         curr_img = 0
         total_times = []
+
+        profiler = cProfile.Profile()
+        profiler.enable()
         for image_path in list_of_image_paths:
             print(
                 "Inferring image:{} {}/{}".format(
@@ -204,12 +229,15 @@ class Demo:
             self.inference(model=model, image_path=image_path, visualize=True)
             t2 = time.time()
             total_times.append(t2 - t1)
+            print("Total time for this image:{}".format(t2 - t1))
             curr_img += 1
         print(
             "Average time taken for {} images is {}".format(
                 n_images, np.mean(total_times[1:])
             )
         )
+        profiler.disable()
+        profiler.dump_stats("example.stats")
 
 
 if __name__ == "__main__":

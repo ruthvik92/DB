@@ -1,4 +1,8 @@
+from typing import List, Tuple
+from copy import deepcopy
+
 import cv2
+import numpy as np
 
 
 hand_annot_polygon = []
@@ -15,47 +19,81 @@ def on_mouse_double_clicks(event, x, y, flags, params):
 # https://medium.com/analytics-vidhya/handling-mouse-events-in-open-cv-part-3-3dfdd59ab2f6
 
 
-class DrawLineWidget(object):
+class AiAssistedAnnotations(object):
     # https://stackoverflow.com/questions/60587273/drawing-a-line-on-an-image-using-mouse-clicks-with-python-opencv-library
-    def __init__(self):
-        self.original_image = None
-        self.clone = None
+    def __init__(self, original_image, ai_annotated_polygons: List[Tuple]):
+        self.original_image = original_image
+        self.cloned_image = self.make_clone_of_original()
 
         cv2.namedWindow("image")
+        cv2.resizeWindow("image", 640 * 2, 480 * 2)
         cv2.setMouseCallback("image", self.extract_coordinates)
 
         # List to store start/end points
-        self.hand_annot_polygon = []
-        self.model_annot_polygon = []
+        self.hand_annot_instance_polygon = []
+        self.hand_annot_image_polygons = []
+        self.ai_annotated_polygons = ai_annotated_polygons
+        self.nth_instance = 0
+        self.isClosed = True
+        # Blue color in BGR
+        self.color = (255, 0, 0)
+        # Line thickness of 2 px
+        self.thickness = 2
+
+    # def load_image(self, image_path: str):
+    #    image = cv2.imload(image_path)
+    #    img = ImageClass()
+    #    img.set_image(image=image, image_format="BGR")
+    #    self._original_image = img
+    #    self._cloned_image = deepcopy(self._original_image)
+
+    def show_ai_predictions(self):
+        cloned_image = self.cloned_image.get_image()
+        print(cloned_image.shape)
+        for coords in self.ai_annotated_polygons:
+            cloned_image = cv2.polylines(
+                cloned_image, [coords], self.isClosed, self.color, self.thickness
+            )
+        self.cloned_image.set_image(image=cloned_image, image_format="BGR")
+        self.cloned_image.show_image(window_name="image")
+        # cv2.imshow("image", cloned_image)
+        # cv2.resizeWindow("image", 640, 480)
+        # cv2.waitKey(0)
 
     def make_clone_of_original(self):
-        self.clone = self.original_image.copy()
+        return deepcopy(self.original_image)
 
     def extract_coordinates(self, event, x, y, flags, parameters):
         # Record starting (x,y) coordinates on left mouse button click
+        cloned_image = self.cloned_image.get_image()
         if event == cv2.EVENT_LBUTTONDOWN:
-            self.hand_annot_polygon.append((x, y))
-            cv2.circle(self.clone, (x, y), 100, (255, 0, 0), -1)
-            if(len(self.hand_annot_polygon) > 2)
+            print(10 * "$")
+            print([x, y])
+            self.hand_annot_instance_polygon.append([x, y])
+            cloned_image = cv2.circle(cloned_image, (x, y), 3, (255, 0, 0), -1)
+            self.cloned_image.set_image(image=cloned_image, image_format="BGR")
+            self.cloned_image.show_image(window_name="image")
 
         # Record ending (x,y) coordintes on left mouse bottom release
-        elif event == cv2.EVENT_LBUTTONUP:
-            self.image_coordinates.append((x, y))
+        elif event == cv2.EVENT_LBUTTONDBLCLK:
+            self.hand_annot_instance_polygon.append([x, y])
             print(
                 "Starting: {}, Ending: {}".format(
-                    self.image_coordinates[0], self.image_coordinates[1]
+                    self.hand_annot_instance_polygon[0],
+                    self.hand_annot_instance_polygon[-1],
                 )
             )
+            cloned_image = cv2.polylines(
+                cloned_image,
+                [np.array(self.hand_annot_instance_polygon).reshape(-1, 2)],
+                self.isClosed,
+                self.color,
+                self.thickness,
+            )
+            self.cloned_image.set_image(image=cloned_image, image_format="BGR")
+            self.cloned_image.show_image(window_name="image")
 
             # Draw line
-            cv2.line(
-                self.clone,
-                self.image_coordinates[0],
-                self.image_coordinates[1],
-                (36, 255, 12),
-                2,
-            )
-            cv2.imshow("image", self.clone)
 
         # Clear drawing boxes on right mouse button click
         elif event == cv2.EVENT_RBUTTONDOWN:

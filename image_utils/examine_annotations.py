@@ -14,10 +14,8 @@ image = cv2.imread(path)
 # pts = pts.reshape((-1, 1, 2))
 
 isClosed = True
-
 # Blue color in BGR
 color = (255, 0, 0)
-
 # Line thickness of 2 px
 thickness = 2
 
