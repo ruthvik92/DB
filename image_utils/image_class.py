@@ -34,7 +34,7 @@ class ImageClass(object):
         np.ndarray
             Loaded image in numpy array format.
         """
-        return self.__image
+        return self.__image, self.__image_format
 
     def set_image(self, image: np.ndarray, image_format: str):
         """Set the image value if you happen to modify the loaded
@@ -69,13 +69,13 @@ class ImageClass(object):
 
     def show_image(self, window_name="self.__image"):
         """Display a loaded image"""
-        # cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+        cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
         cv2.imshow(window_name, self.__image)
-        # cv2.resizeWindow(window_name, 640 * 2, 480 * 2)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        cv2.resizeWindow(window_name, 640 * 2, 480 * 2)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
         # cv2.destroyWindow("image")
-        cv2.waitKey(1)
+        # cv2.waitKey(1)
 
     def write_image(self, img_path: str):
         """Write an image to disk given a path.

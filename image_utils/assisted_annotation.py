@@ -1,5 +1,6 @@
 from typing import List, Tuple
 from copy import deepcopy
+from itertools import compress
 
 import cv2
 import numpy as np
@@ -25,8 +26,8 @@ class AiAssistedAnnotations(object):
         self.original_image = original_image
         self.cloned_image = self.make_clone_of_original()
 
-        cv2.namedWindow("image")
-        cv2.resizeWindow("image", 640 * 2, 480 * 2)
+        cv2.namedWindow("image", cv2.WINDOW_NORMAL)
+        # cv2.resizeWindow("image", 640 * 2, 480 * 2)
         cv2.setMouseCallback("image", self.extract_coordinates)
 
         # List to store start/end points
@@ -36,7 +37,8 @@ class AiAssistedAnnotations(object):
         self.nth_instance = 0
         self.isClosed = True
         # Blue color in BGR
-        self.color = (255, 0, 0)
+        self.hand_color = (255, 0, 0)
+        self.ai_color = (0, 0, 255)
         # Line thickness of 2 px
         self.thickness = 2
 
@@ -48,35 +50,63 @@ class AiAssistedAnnotations(object):
     #    self._cloned_image = deepcopy(self._original_image)
 
     def show_ai_predictions(self):
-        cloned_image = self.cloned_image.get_image()
+        cloned_image, _ = self.cloned_image.get_image()
         print(cloned_image.shape)
         for coords in self.ai_annotated_polygons:
             cloned_image = cv2.polylines(
-                cloned_image, [coords], self.isClosed, self.color, self.thickness
+                cloned_image, [coords], self.isClosed, self.ai_color, self.thickness
             )
         self.cloned_image.set_image(image=cloned_image, image_format="BGR")
-        self.cloned_image.show_image(window_name="image")
+        # self.cloned_image.show_image(window_name="image")
+        self.show_image(image=cloned_image, window_name="image")
         # cv2.imshow("image", cloned_image)
         # cv2.resizeWindow("image", 640, 480)
-        # cv2.waitKey(0)
+        cv2.waitKey(0)
 
     def make_clone_of_original(self):
         return deepcopy(self.original_image)
 
+    def show_image(self, image: np.array, window_name="image"):
+        """Display a loaded image"""
+        # cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+        cv2.imshow(window_name, image)
+        cv2.resizeWindow(window_name, 640 * 2, 480 * 2)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+        # cv2.destroyWindow("image")
+        # cv2.waitKey(1)
+
+    def check_if_point_in_poly(self, point: Tuple):
+        point_in_ai_polygons = []
+        point_in_hand_polygons = []
+        for item in self.ai_annotated_polygons:
+            dist = cv2.pointPolygonTest(item, point, True)
+            point_in_ai_polygons.append(dist)
+
+        for item in self.hand_annot_image_polygons:
+            dist = cv2.pointPolygonTest(item, point, True)
+            point_in_hand_polygons.append(dist)
+        return point_in_ai_polygons, point_in_hand_polygons
+
     def extract_coordinates(self, event, x, y, flags, parameters):
         # Record starting (x,y) coordinates on left mouse button click
-        cloned_image = self.cloned_image.get_image()
+        cloned_image, _ = self.cloned_image.get_image()
         if event == cv2.EVENT_LBUTTONDOWN:
-            print(10 * "$")
-            print([x, y])
+            # print(10 * "$")
+            # print([x, y])
             self.hand_annot_instance_polygon.append([x, y])
             cloned_image = cv2.circle(cloned_image, (x, y), 3, (255, 0, 0), -1)
             self.cloned_image.set_image(image=cloned_image, image_format="BGR")
-            self.cloned_image.show_image(window_name="image")
+            # self.cloned_image.show_image(window_name="image")
+            self.show_image(image=cloned_image)
 
         # Record ending (x,y) coordintes on left mouse bottom release
         elif event == cv2.EVENT_LBUTTONDBLCLK:
             self.hand_annot_instance_polygon.append([x, y])
+            self.hand_annot_image_polygons.append(
+                self.hand_annot_instance_polygon.reshape(-1, 2)
+            )
+            self.hand_annot_instance_polygon = []
             print(
                 "Starting: {}, Ending: {}".format(
                     self.hand_annot_instance_polygon[0],
@@ -87,20 +117,38 @@ class AiAssistedAnnotations(object):
                 cloned_image,
                 [np.array(self.hand_annot_instance_polygon).reshape(-1, 2)],
                 self.isClosed,
-                self.color,
+                self.hand_color,
                 self.thickness,
             )
             self.cloned_image.set_image(image=cloned_image, image_format="BGR")
-            self.cloned_image.show_image(window_name="image")
+            # self.cloned_image.show_image(window_name="image")
+            self.show_image(image=cloned_image)
 
             # Draw line
 
         # Clear drawing boxes on right mouse button click
         elif event == cv2.EVENT_RBUTTONDOWN:
-            self.clone = self.original_image.copy()
+            point = x, y
+            point_in_ai_poly, point_in_hand_poly = self.check_if_point_in_poly(
+                point=point
+            )
 
-    def show_image(self):
-        return self.clone
+        def update_polygons(point_in_ai_poly: List, point_in_hand_poly: List):
+            new_clone = self.make_clone_of_original()
+            self.cloned_image = new_clone
+            new_cloned_image, _ = new_clone.get_image()
+            bool_point_in_ai_poly = [item == 1.0 for item in point_in_ai_poly]
+            bool_point_in_hand_poly = [item == 1.0 for item in point_in_hand_poly]
+            self.ai_annotated_polygons = compress(
+                self.ai_annotated_polygons, bool_point_in_ai_poly
+            )
+            self.hand_annot_image_polygons = compress(
+                self.hand_annot_image_polygons, bool_point_in_hand_poly
+            )
+            self.show_ai_predictions()
+
+    # def show_image(self):
+    #    return self.clone
 
 
 if __name__ == "__main__":
