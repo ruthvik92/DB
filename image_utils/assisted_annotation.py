@@ -130,7 +130,7 @@ class AiAssistedAnnotations(object):
 
         # Record ending (x,y) coordintes on left mouse bottom release
         # elif event == cv2.EVENT_LBUTTONDBLCLK:
-        elif event == cv2.EVENT_MBUTTONDOWN:
+        elif event == cv2.EVENT_RBUTTONDOWN:
             print("ENTERING MIDDLE CLICK EVENT")
             print(self.hand_annot_instance_polygon)
             self.hand_annot_instance_polygon.append([x, y])
@@ -158,7 +158,7 @@ class AiAssistedAnnotations(object):
             # Draw line
 
         # Clear drawing boxes on right mouse button click
-        elif event == cv2.EVENT_RBUTTONDOWN:
+        elif event == cv2.EVENT_MBUTTONDOWN:
             point = x, y
             point_in_ai_poly, point_in_hand_poly = self.check_if_point_in_poly(
                 point=point
