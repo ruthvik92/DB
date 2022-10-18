@@ -164,6 +164,8 @@ class Demo:
         batch["filename"] = [image_path]
         # t1 = time.time()
         img, img_np, original_shape = self.load_image(image_path)
+        img_obj = ic.ImageClass()
+        img_obj.set_image(image=img_np, image_format="BGR")
         # print("Time to load this image:{}".format(time.time() - t1))
         batch["shape"] = [original_shape]
         with torch.no_grad():
@@ -178,6 +180,15 @@ class Demo:
             )
             boxes, _ = output
             boxes = boxes[0]
+            polygons = [
+                np.array(item).astype(np.int32).reshape(-1, 2) for item in boxes
+            ]
+            ai_aa = aa.AiAssistedAnnotations(
+                original_image=img_obj, ai_annotated_polygons=polygons
+            )
+            ai_aa.show_ai_predictions()
+            cv2.waitKey(0)
+            # sys.exit()
 
             print("Time for pure postprocessing only:{}".format(time.time() - t1))
             if not os.path.isdir(self.args["result_dir"]):
