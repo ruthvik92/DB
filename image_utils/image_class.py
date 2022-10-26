@@ -16,7 +16,7 @@ class ImageClass(object):
         self.__image_format = "BGR"
         self.__image = None
 
-    def read_image(self, img_path: str, **kwargs):
+    def read_image(self, img_path: str, loading_engine: str = "opencv", **kwargs):
         """Read an image using cv2.imread
 
         Parameters
@@ -25,6 +25,10 @@ class ImageClass(object):
             Path to the image that needs to be loaded
         """
         self.__image = cv2.imread(img_path, **kwargs)
+        if loading_engine.lower() == "opencv":
+            self.__image_format = "BGR"
+        elif loading_engine.lower() == "pil":
+            self.__image_format = "RGB"
 
     def get_image(self):
         """Get access to the loaded image
