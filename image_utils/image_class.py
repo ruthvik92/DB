@@ -2,6 +2,7 @@ from typing import Tuple
 
 import cv2
 import numpy as np
+from PIL import Image
 
 
 class ImageClass(object):
@@ -13,8 +14,11 @@ class ImageClass(object):
     """
 
     def __init__(self):
+        self.loading_engine = "opencv"
         self.__image_format = "BGR"
         self.__image = None
+        self.__image_height = None
+        self.__image_width = None
 
     def read_image(self, img_path: str, loading_engine: str = "opencv", **kwargs):
         """Read an image using cv2.imread
@@ -24,13 +28,29 @@ class ImageClass(object):
         img_path : str
             Path to the image that needs to be loaded
         """
-        self.__image = cv2.imread(img_path, **kwargs)
         if loading_engine.lower() == "opencv":
+            self.__image = cv2.imread(img_path, **kwargs)
             self.__image_format = "BGR"
         elif loading_engine.lower() == "pil":
+            self.__image = Image.open(img_path, **kwargs)
             self.__image_format = "RGB"
+        self.calc_image_dimensions()
 
-    def get_image(self):
+    def calc_image_dimensions(self):
+        if self.loading_engine.lower() == "opencv":
+            self.__image_height, self.__image_width = (
+                self.__image.shape[0],
+                self.__image.shape[1],
+            )
+        elif self.loading_engine.lower() == "pil":
+            self.__image_width, self.__image_height = self.__image.size
+
+    @property
+    def dimensions(self):
+        return self.__image_height, self.__image_width
+
+    @property
+    def image(self):
         """Get access to the loaded image
 
         Returns
@@ -40,7 +60,8 @@ class ImageClass(object):
         """
         return self.__image, self.__image_format
 
-    def set_image(self, image: np.ndarray, image_format: str):
+    @image.setter
+    def image(self, image_and_format: Tuple[np.ndarray, str]):
         """Set the image value if you happen to modify the loaded
         image.
 
@@ -51,8 +72,10 @@ class ImageClass(object):
         image_format : str
             Is the image 'RGB' or 'BGR'?
         """
+        image, image_format = image_and_format
         self.__image = image
         self.__image_format = image_format
+        self.calc_image_dimensions()
 
     def crop_image_top_left(self, top_left_coord: Tuple = (505, 444)):
         """Crop an image given top left coordinates
