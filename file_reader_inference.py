@@ -22,7 +22,12 @@ class FileReaderInference(object):
         self.polygons = []
         self.scores = []
         self.load_a_samples_polygons()
-        self.sub_images_list = [ic.ImageClass() for i in range(len(self.scores))]
+        self.polygon_sub_images = [
+            ic.ImageClass() for i in range(len(self.polygons))
+        ]  # full images make this option with a config system
+        self.bboxes_sub_images = [
+            ic.ImageClass() for i in range(len(self.polygons))
+        ]  # cropped images
 
     def load_a_samples_polygons(self):
         polygons_scores = fu.read_text_file(self.polygons_path)
@@ -43,8 +48,29 @@ class FileReaderInference(object):
 
     def crop_sub_images(self):
         height, width = self.image.dimensions
-        masks = [np.zeros(())]
+        masks = cu.get_masks_from_polygon(
+            image_dimensions=(height, width), polygons=self.polygons
+        )
+        image, _ = self.image.image
 
+        roi_polygons = list(
+            map(lambda x: x[:, :, np.newaxis] * image, masks)
+        )  # full images with only ROIs
+        bounding_rects = [
+            cv2.boundingRect(np.array(polygon, dtype=np.int32).reshape(-1, 2))
+            for polygon in self.polygons
+        ]  # returns [(x,y,w,h)...()] use img[y:y+h, x:x+w]
+        print(bounding_rects)
+
+        roi_cropped_bboxes = [
+            image[item[1] : item[1] + item[3], item[0] : item[0] + item[2]]
+            for item in bounding_rects
+        ]
+        cv2.namedWindow("temp", cv2.WINDOW_NORMAL)
+        # cv2.imshow("temp", roi_polygons[0])
+        cv2.imshow("temp", roi_cropped_bboxes[1])
+        cv2.resizeWindow("temp", 640, 480)
+        cv2.waitKey(0)
         pass
 
 
@@ -58,6 +84,9 @@ if __name__ == "__main__":
         file_reader = FileReaderInference(
             polygons_path=output_files[i], image_path=input_files[i]
         )
-        file_reader.draw_a_samples_polygons()
-        file_reader.show_polygons_on_a_sample()
+        # file_reader.draw_a_samples_polygons()
+        # file_reader.show_polygons_on_a_sample()
+        file_reader.crop_sub_images()
+        sys.exit(0)
         cv2.waitKey(0)
+        sys.exit()
