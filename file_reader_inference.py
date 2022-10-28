@@ -1,3 +1,4 @@
+from curses import window
 from typing import List, Tuple
 from copy import deepcopy
 from itertools import compress
@@ -14,7 +15,11 @@ from file_utils import file_utils as fu
 
 
 class FileReaderInference(object):
-    def __init__(self, polygons_path: str, image_path: str):
+    def __init__(
+        self,
+        polygons_path: str,
+        image_path: str,
+    ):
         self.polygons_path = polygons_path
         self.image_path = image_path
         self.image = ic.ImageClass()
@@ -22,12 +27,14 @@ class FileReaderInference(object):
         self.polygons = []
         self.scores = []
         self.load_a_samples_polygons()
-        self.polygon_sub_images = [
+        self.polygon_rois = [
             ic.ImageClass() for i in range(len(self.polygons))
         ]  # full images make this option with a config system
-        self.bboxes_sub_images = [
+        self.bboxes_rois = [
             ic.ImageClass() for i in range(len(self.polygons))
         ]  # cropped images
+        # self.visualization_debugger = visualization_debugger
+        # self.visualization_type = visualization_types  # bboxes or polygons
 
     def load_a_samples_polygons(self):
         polygons_scores = fu.read_text_file(self.polygons_path)
@@ -46,7 +53,7 @@ class FileReaderInference(object):
     def show_polygons_on_a_sample(self):
         self.image.show_image(window_name="full_image")
 
-    def crop_sub_images(self):
+    def crop_rois(self):
         height, width = self.image.dimensions
         masks = cu.get_masks_from_polygon(
             image_dimensions=(height, width), polygons=self.polygons
@@ -60,18 +67,44 @@ class FileReaderInference(object):
             cv2.boundingRect(np.array(polygon, dtype=np.int32).reshape(-1, 2))
             for polygon in self.polygons
         ]  # returns [(x,y,w,h)...()] use img[y:y+h, x:x+w]
-        print(bounding_rects)
 
         roi_cropped_bboxes = [
             image[item[1] : item[1] + item[3], item[0] : item[0] + item[2]]
             for item in bounding_rects
         ]
-        cv2.namedWindow("temp", cv2.WINDOW_NORMAL)
-        # cv2.imshow("temp", roi_polygons[0])
-        cv2.imshow("temp", roi_cropped_bboxes[1])
-        cv2.resizeWindow("temp", 640, 480)
-        cv2.waitKey(0)
-        pass
+        for (polygon_roi, image) in zip(self.polygon_rois, roi_polygons):
+            polygon_roi.image = (image, "BGR")  # make this optional(memory intesive)
+
+        for (bbox_roi, image) in zip(self.bboxes_rois, roi_cropped_bboxes):
+            bbox_roi.image = (image, "BGR")
+
+        # if self.visualization_debugger:
+        #    self.visualize_rois()
+
+    def show_rois(self, visualization_type="bboxes"):
+
+        if visualization_type == "bboxes":
+            window_num = 0
+            for cropped_bbox in self.bboxes_rois:
+                cropped_bbox.show_image(
+                    window_name="cropped_bbox:{}".format(window_num),
+                    window_size=(320, 240),
+                )
+                window_num += 1
+        elif visualization_type == "polygons":
+            window_num = 0
+            for roi_polygon in self.polygon_rois:
+                roi_polygon.show_image(
+                    window_name="cropped_bbox:{}".format(window_num),
+                    window_size=(320, 240),
+                )
+                window_num += 1
+        else:
+            print(
+                "Visualization of type:{} not understood! Use bboxes or polygons only".format(
+                    visualization_type
+                )
+            )
 
 
 if __name__ == "__main__":
@@ -82,11 +115,14 @@ if __name__ == "__main__":
     # file_reader.load_a_samples_polygons(polygons_path=file_reader._output_files[0])
     for i in range(len(input_files)):
         file_reader = FileReaderInference(
-            polygons_path=output_files[i], image_path=input_files[i]
+            polygons_path=output_files[i],
+            image_path=input_files[i],
         )
-        # file_reader.draw_a_samples_polygons()
-        # file_reader.show_polygons_on_a_sample()
-        file_reader.crop_sub_images()
-        sys.exit(0)
+        file_reader.draw_a_samples_polygons()
+        file_reader.show_polygons_on_a_sample()
+        file_reader.crop_rois()
+        # file_reader.show_rois(visualization_type="polygons")
+        file_reader.show_rois()
         cv2.waitKey(0)
+        sys.exit(0)
         sys.exit()
