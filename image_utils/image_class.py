@@ -94,6 +94,17 @@ class ImageClass(object):
         cropped_image = self.__image[top_left_coord[0] :, top_left_coord[1] :]
         return cropped_image, self.__image_format
 
+    def to_grayscale(self):
+        if (self.__image_format).lower() == "bgr":
+            self.__image = cv2.cvtColor(self.__image, cv2.COLOR_BGR2GRAY)
+        elif (self.__image_format).lower() == "rgb":
+            self.__image = cv2.cvtColor(self.__image, cv2.COLOR_RGB2GRAY)
+        elif (self.__image_format).lower() == "gray":
+            pass
+        self.__image_format = "GRAY"
+        self.calc_image_dimensions()
+        return self
+
     def show_image(
         self, window_name: str = "self.__image", window_size: Tuple = (640 * 2, 480 * 2)
     ):
