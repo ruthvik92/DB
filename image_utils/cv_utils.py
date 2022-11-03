@@ -3,7 +3,7 @@ from typing import List, TypeVar, Tuple
 import cv2
 import numpy as np
 
-import image_manipulations_registry
+from . import image_manipulations_registry
 
 T = TypeVar("+R", bound=int | float)
 # NPARRAY = TypeVar("np.array", bound=np.array)

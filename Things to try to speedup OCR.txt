@@ -1,0 +1,15 @@
+Things to try to speedup OCR
+1. Try multiprocessing with pytesseract
+
+2.Try multiprocessing with pytessocr
+# https://github.com/sirfz/tesserocr/issues/205
+# https://pypi.org/project/tesserocr/
+
+3. Try EasyOCR
+# https://github.com/JaidedAI/EasyOCR
+# https://www.jaided.ai/easyocr/tutorial/
+
+
+Things to try to improve the recognition:
+1. Do uniform illumination
+https://stackoverflow.com/questions/62042172/how-to-remove-noise-in-image-opencv-python
