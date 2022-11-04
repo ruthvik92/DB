@@ -36,6 +36,19 @@ class FileReaderInference(object):
         # self.visualization_debugger = visualization_debugger
         # self.visualization_type = visualization_types  # bboxes or polygons
 
+    @property.setter
+    def bboxes_rois(self, roi_image_list: Tuple(List[np.array], str)):
+        image_format = roi_image_list[1]
+        roi_image_list = roi_image_list[0]
+        assert len(self.bboxes_rois) == len(
+            roi_image_list
+        ), "Length of ROI objects {} is not the same as supplied roi_image_list {}".format(
+            len(self.bboxes_rois), len(roi_image_list)
+        )
+
+        for image_roi, img_obj in zip(roi_image_list, self.bboxes_rois):
+            img_obj.image = (image_roi, image_format)
+
     def load_a_samples_polygons(self):
         polygons_scores = fu.read_text_file(self.polygons_path)
         polygons_scores = [line.split(",") for line in polygons_scores]

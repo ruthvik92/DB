@@ -92,8 +92,6 @@ if __name__ == "__main__":
         # string = pytess.image_to_string(temp)
         # print(string)
         # sys.exit(0)
-        file_reader.draw_a_samples_polygons()
-        file_reader.show_polygons_on_a_sample()
         t1 = time.time()
         file_reader.crop_rois()
         # file_reader.show_rois(visualization_type="polygons")
@@ -107,11 +105,14 @@ if __name__ == "__main__":
             list_of_callables=manipulations_callables,
             list_of_arguments=manipulations_arguments,
         )
+        file_reader.bboxes_rois = (text_recognizer.images, "gray")
 
         detected_text = text_recognizer.extract_text_from_images()
         t2 = time.time()
         print("Time taken to run one recognition:{}".format(t2 - t1))
         print(detected_text)
         file_reader.show_rois()
+        file_reader.draw_a_samples_polygons()
+        file_reader.show_polygons_on_a_sample()
         cv2.waitKey(0)
         # sys.exit(0)

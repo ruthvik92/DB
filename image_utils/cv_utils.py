@@ -64,6 +64,15 @@ def draw_text_on_image(image: np.array, string: List, **kwargs) -> np.array:
     return image
 
 
+@image_manipulations_registry.IMAGE_MANIPULATIONS.register("histogram_equalization")
+def histogram_qualization(
+    image: np.array, clipLimit: float = 2.0, tileGridSize: Tuple(int, int) = (8, 8)
+) -> np.array:
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    equalized_image = clahe.apply(image)
+    return equalized_image
+
+
 @image_manipulations_registry.IMAGE_MANIPULATIONS.register("contrast_and_brightness")
 def change_contrast_and_brightness(
     image: np.array, contrast_control: float, brightness_control: float

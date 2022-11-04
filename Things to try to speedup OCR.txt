@@ -13,3 +13,16 @@ Things to try to speedup OCR
 Things to try to improve the recognition:
 1. Do uniform illumination
 https://stackoverflow.com/questions/62042172/how-to-remove-noise-in-image-opencv-python
+
+
+
+Im assuming that you are preprocessing the image for OCR(Optical Character Recognition)
+
+I had a project to detect license plates and these were the steps I did, you can apply 
+them to your project. After greying the image try applying equalize histogram to the 
+image, this allows the area's in the image with lower contrast to gain a higher contrast. 
+Then blur the image to reduce the noise in the background. Next apply edge detection 
+on the image, make sure that noise is sufficiently removed as ED is susceptible to it. 
+Lastly, apply closing(dilation then erosion) on the image to close all the small holes 
+inside the words.
+
