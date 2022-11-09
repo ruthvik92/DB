@@ -30,23 +30,27 @@ class FileReaderInference(object):
         self.polygon_rois = [
             ic.ImageClass() for i in range(len(self.polygons))
         ]  # full images make this option with a config system
-        self.bboxes_rois = [
+        self.__bboxes_rois = [
             ic.ImageClass() for i in range(len(self.polygons))
         ]  # cropped images
         # self.visualization_debugger = visualization_debugger
         # self.visualization_type = visualization_types  # bboxes or polygons
 
-    @property.setter
-    def bboxes_rois(self, roi_image_list: Tuple(List[np.array], str)):
-        image_format = roi_image_list[1]
+    @property
+    def bboxes_rois(self):
+        return self.__bboxes_rois
+
+    @bboxes_rois.setter
+    def bboxes_rois(self, roi_image_list: Tuple[np.ndarray, str]):
         roi_image_list = roi_image_list[0]
-        assert len(self.bboxes_rois) == len(
+        image_format = roi_image_list[1]
+        assert len(self.__bboxes_rois) == len(
             roi_image_list
         ), "Length of ROI objects {} is not the same as supplied roi_image_list {}".format(
-            len(self.bboxes_rois), len(roi_image_list)
+            len(self.__bboxes_rois), len(roi_image_list)
         )
 
-        for image_roi, img_obj in zip(roi_image_list, self.bboxes_rois):
+        for image_roi, img_obj in zip(roi_image_list, self.__bboxes_rois):
             img_obj.image = (image_roi, image_format)
 
     def load_a_samples_polygons(self):
@@ -88,7 +92,7 @@ class FileReaderInference(object):
         for (polygon_roi, image) in zip(self.polygon_rois, roi_polygons):
             polygon_roi.image = (image, "BGR")  # make this optional(memory intesive)
 
-        for (bbox_roi, image) in zip(self.bboxes_rois, roi_cropped_bboxes):
+        for (bbox_roi, image) in zip(self.__bboxes_rois, roi_cropped_bboxes):
             bbox_roi.image = (image, "BGR")
 
         # if self.visualization_debugger:
@@ -98,7 +102,7 @@ class FileReaderInference(object):
 
         if visualization_type == "bboxes":
             window_num = 0
-            for cropped_bbox in self.bboxes_rois:
+            for cropped_bbox in self.__bboxes_rois:
                 cropped_bbox.show_image(
                     window_name="cropped_bbox:{}".format(window_num),
                     window_size=(320, 240),
