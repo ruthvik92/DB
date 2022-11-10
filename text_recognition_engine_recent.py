@@ -20,7 +20,6 @@ class TextRecognitionEngine(object):
         self.recognized_strings = []
 
     def extract_text_from_images(self):
-        self.resize_bbox_rois()
 
         t1 = time.time()
         strings = [
@@ -74,24 +73,24 @@ if __name__ == "__main__":
     outputs_path = "/home/ruthvik/DB/demo_results"
     input_files = fu.get_list_of_files(inputs_path, file_type="*.png")
     output_files = fu.get_list_of_files(outputs_path, file_type="*.txt")
+    # manipulations_callables = cu.make_manipulations_sequencer(
+    #    manipulations_sequence=["contrast_and_brightness", "unsharp_image"]
+    # )
+    # manipulations_arguments = [
+    #    {"contrast_control": 1.5, "brightness_control": 10},
+    #    {"amount": 1.25},
+    # ]
     manipulations_callables = cu.make_manipulations_sequencer(
-        manipulations_sequence=["contrast_brightness", "unsharp_image"]
+        manipulations_sequence=["histogram_equalization", "gaussian_blurring"]
     )
-    manipulations_arguments = [
-        {"contrast_control": 1.5, "brightness_control": 10},
-        {"amount": 1.25},
-    ]
+    manipulations_arguments = [{}, {}]
+
     # file_reader.load_a_samples_polygons(polygons_path=file_reader._output_files[0])
     for i in range(len(input_files)):
         file_reader = FileReaderInference(
             polygons_path=output_files[i],
             image_path=input_files[i],
         )
-        # temp, _ = file_reader.image.image
-        # print(temp.shape)
-        # string = pytess.image_to_string(temp)
-        # print(string)
-        # sys.exit(0)
         t1 = time.time()
         file_reader.crop_rois()
         # file_reader.show_rois(visualization_type="polygons")

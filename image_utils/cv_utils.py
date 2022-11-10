@@ -43,8 +43,8 @@ def get_masks_from_polygon(
 
 def draw_text_on_image(image: np.array, string: List, **kwargs) -> np.array:
 
-    image = kwargs.pop("image")
-    string = kwargs.pop("string")
+    # image = kwargs.pop("image")
+    # string = kwargs.pop("string")
     font = kwargs.pop("font", cv2.FONT_HERSHEY_SIMPLEX)
     fontScale = kwargs.pop("fontScale", 0.5)
     fontColor = kwargs.pop("fontColor", (0, 255, 0))
@@ -62,6 +62,15 @@ def draw_text_on_image(image: np.array, string: List, **kwargs) -> np.array:
         lineType,
     )
     return image
+
+
+@image_manipulations_registry.IMAGE_MANIPULATIONS.register("gaussian_blurring")
+def gaussian_blurring(
+    image: np.array, kernel_size: Tuple[int, int] = (5, 5), sigmaX=5, sigmaY=5
+) -> np.array:
+
+    blurred_image = cv2.GaussianBlur(image, kernel_size, sigmaX=sigmaX, sigmaY=sigmaY)
+    return blurred_image
 
 
 @image_manipulations_registry.IMAGE_MANIPULATIONS.register("histogram_equalization")
