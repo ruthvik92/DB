@@ -21,12 +21,12 @@ class TextRecognitionEngine(object):
         self,
         images: List,
         roi_bbox_resize_fracs: Tuple,
-        text_recognition_engine_partial,
+        recognition_engine_partial,
     ):
         self.images = images
         self.roi_bbox_resize_fracs = roi_bbox_resize_fracs  # width_frac, height_frac
         self.recognized_strings = []
-        self.text_recognition_engine_partial = text_recognition_engine_partial
+        self.recognition_engine_partial = recognition_engine_partial
 
     @tu.timing
     def extract_text_from_images(self):
@@ -52,7 +52,7 @@ class TextRecognitionEngine(object):
         pool = Pool(processes=min(len(self.images), 12))
         # async_results = pool.map_async(func=im_to_str, iterable=self.images)
         async_results = pool.map_async(
-            func=self.text_recognition_engine_partial, iterable=self.images
+            func=self.recognition_engine_partial, iterable=self.images
         )
         strings = async_results.get()
         self.recognized_strings = strings
@@ -85,12 +85,12 @@ def make_text_recognition_engine(
     else:
         images = [img_obj.image[0] for img_obj in image_objects]
 
-    text_recognition_engine_partial = partial(pytess.image_to_string, config="--psm 6")
+    recognition_engine_partial = partial(pytess.image_to_string, config="--psm 6")
 
     text_recognizer_obj = TextRecognitionEngine(
         images=images,
         roi_bbox_resize_fracs=roi_bbox_resize_fracs,
-        text_recognition_engine_partial=text_recognition_engine_partial,
+        recognition_engine_partial=recognition_engine_partial,
     )
 
     return text_recognizer_obj
