@@ -136,9 +136,9 @@ if __name__ == "__main__":
         detected_text = text_recognizer.extract_text_from_images_parallel()
         text_recognizer.put_text_on_bbox_rois(detected_strings=detected_text)
         t2 = time.time()
-        file_reader.show_rois()
-        file_reader.draw_a_samples_polygons()
-        file_reader.show_polygons_on_a_sample()
+        # file_reader.show_rois()
+        # file_reader.draw_a_samples_polygons()
+        # file_reader.show_polygons_on_a_sample()
         cv2.waitKey(0)
     for key, val in tu.TOTAL_TIME.items():
         print("Average time taken for function {} is {}".format(key, np.mean(val)))
